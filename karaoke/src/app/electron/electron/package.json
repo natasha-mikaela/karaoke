@@ -1,0 +1,5 @@
+{
+  "name": "karaoke-electron",
+  "main": "main.js",
+  "private": true
+}
