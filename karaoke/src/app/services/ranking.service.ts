@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { StorageService } from './storage.service';
 
 const STORAGE_CONFIG = 'karaoke_config_v1';
 const STORAGE_RANKING = 'karaoke_ranking_v1';
@@ -9,6 +10,12 @@ export interface KaraokeConfig {
   clipPeak: number;
   maxPtsPerSec: number;
   clipPenaltyPerSec: number;
+}
+
+export interface RankingEntry {
+  music: string;
+  score: number;
+  date: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -22,6 +29,8 @@ export class RankingService {
     clipPenaltyPerSec: 12
   };
 
+  constructor(private storage: StorageService) {}
+
   loadConfig(): KaraokeConfig {
     try {
       return { ...this.DEFAULTS, ...JSON.parse(localStorage.getItem(STORAGE_CONFIG)!) };
@@ -34,12 +43,14 @@ export class RankingService {
     localStorage.setItem(STORAGE_CONFIG, JSON.stringify(cfg));
   }
 
-  loadRanking() {
-    return JSON.parse(localStorage.getItem(STORAGE_RANKING) || '[]');
+  loadRanking(): RankingEntry[] {
+    // return JSON.parse(localStorage.getItem(STORAGE_RANKING) || '[]');
+          return this.storage.get(STORAGE_RANKING, []);
   }
 
-  saveRanking(arr: any[]) {
-    localStorage.setItem(STORAGE_RANKING, JSON.stringify(arr));
+  saveRanking(arr: RankingEntry[]) {
+    // localStorage.setItem(STORAGE_RANKING, JSON.stringify(arr));
+        this.storage.set(STORAGE_RANKING, arr);
   }
 
   addRanking(music: string, score: number) {

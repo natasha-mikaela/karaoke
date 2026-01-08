@@ -50,17 +50,31 @@
       [value]="micLevel * 100"
     ></mat-progress-bar>
 
-    <mat-slider
+    <!-- <mat-slider
       min="0"
       max="1"
       step="0.01"
-      [(ngModel)]="monitorVolume"
       (input)="updateMonitorVolume()"
     >
-      <input matSliderThumb />
+      <input
+      matSliderThumb
+      formControlName="monitorVolume" />
+    </mat-slider> -->
+    <div [formGroup]="configForm">
+
+  <!-- <mat-slider min="0" max="1" step="0.01">
+    <input matSliderThumb formControlName="monitorVolume" />
+  </mat-slider> -->
+
+</div>
+
+   <mat-slider min="0" max="1" step="0.01">
+      <input matSliderThumb [formControl]="monitorVolumeCtrl" />
     </mat-slider>
 
-    <small>Volume retorno: {{ monitorVolume | number:'1.2-2' }}</small>
+    <small>
+      Volume retorno: {{ monitorVolume | number:'1.2-2' }}
+    </small>
   </mat-card>
 
   <!-- CONFIGURAÇÃO -->
@@ -71,83 +85,96 @@
 
       <div>
         <label>Silence RMS</label>
-        <mat-slider
-          min="0.001"
-          max="0.08"
-          step="0.001"
-          [(ngModel)]="cfg.silenceRms"
-          (change)="rankingSvc.saveConfig(cfg)"
-        >
-          <input matSliderThumb />
-        </mat-slider>
-        <small>{{ cfg.silenceRms | number:'1.3-3' }}</small>
+        <form [formGroup]="configForm">
+            <mat-slider
+            min="0.001"
+            max="0.08"
+            step="0.001">
+                   <input
+                    matSliderThumb
+                    formControlName="silenceRms" />
+            </mat-slider>
+          </form>
+
+            <span>   
+              Silence RMS:
+              {{ configForm.get('silenceRms')?.value | number:'1.3-3' }}
+            </span>
       </div>
 
+      
       <div>
         <label>Too Loud RMS</label>
-        <mat-slider
-          min="0.02"
-          max="0.4"
-          step="0.005"
-          [(ngModel)]="cfg.tooLoudRms"
-          (change)="rankingSvc.saveConfig(cfg)"
-        >
-          <input matSliderThumb />
-        </mat-slider>
-        <small>{{ cfg.tooLoudRms | number:'1.3-3' }}</small>
+        <form [formGroup]="configForm">
+            <mat-slider
+            min="0.02"
+            max="0.4"
+            step="0.005">
+               <input
+                matSliderThumb
+                formControlName="tooLoudRms" />
+            </mat-slider>
+          </form>
+              <span>   
+              {{ configForm.get('tooLoudRms')?.value | number:'1.3-3' }}
+            </span>
       </div>
 
       <div>
         <label>Clip Peak</label>
-        <mat-slider
-          min="0.8"
-          max="0.999"
-          step="0.001"
-          [(ngModel)]="cfg.clipPeak"
-          (change)="rankingSvc.saveConfig(cfg)"
-        >
-          <input matSliderThumb />
-        </mat-slider>
-        <small>{{ cfg.clipPeak | number:'1.3-3' }}</small>
+        <form [formGroup]="configForm">
+            <mat-slider
+            min="0.8"
+            max="0.999"
+            step="0.001">                  
+             <input
+      matSliderThumb
+      formControlName="clipPeak" />
+            </mat-slider></form>
+
+            <span>
+              {{ configForm.get('clipPeak')?.value | number:'1.3-3' }}
+            </span>
       </div>
 
       <div>
         <label>Pontos / segundo</label>
+        
+        <form [formGroup]="configForm">
         <mat-slider
-          min="1"
-          max="80"
-          step="1"
-          [(ngModel)]="cfg.maxPtsPerSec"
-          (change)="rankingSvc.saveConfig(cfg)"
-        >
-          <input matSliderThumb />
-        </mat-slider>
-        <small>{{ cfg.maxPtsPerSec }}</small>
+            min="1"
+            max="80"
+            step="1">
+                   <input
+      matSliderThumb
+      formControlName="maxPtsPerSec" />
+            </mat-slider></form>
+
+            <span>
+              {{ configForm.get('maxPtsPerSec')?.value | number:'1.3-3' }}</span>
       </div>
 
       <div>
         <label>Penalidade / segundo</label>
-        <mat-slider
-          min="0"
-          max="60"
-          step="1"
-          [(ngModel)]="cfg.clipPenaltyPerSec"
-          (change)="rankingSvc.saveConfig(cfg)"
-        >
-          <input matSliderThumb />
-        </mat-slider>
-        <small>{{ cfg.clipPenaltyPerSec }}</small>
+
+        <form [formGroup]="configForm">
+            <mat-slider
+            min="0"
+            max="60"
+            step="1">
+                                <input
+      matSliderThumb
+      formControlName="clipPenaltyPerSec" />
+            </mat-slider></form>
+
+            <span>{{ configForm.get('clipPenaltyPerSec')?.value  | number:'1.3-3' }}</span>
       </div>
 
     </div>
 
-    <button
-      mat-stroked-button
-      color="warn"
-      (click)="cfg = rankingSvc.DEFAULTS; rankingSvc.saveConfig(cfg)"
-    >
-      Restaurar padrão
-    </button>
+<button mat-raised-button (click)="resetConfig()">
+  Restaurar padrão
+</button>
   </mat-card>
 
   <!-- SCORE -->

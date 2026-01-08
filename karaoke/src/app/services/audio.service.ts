@@ -17,9 +17,10 @@ export class AudioService {
   async enableMic() {
     this.micStream = await navigator.mediaDevices.getUserMedia({
       audio: {
-        echoCancellation: false,
-        noiseSuppression: false,
-        autoGainControl: false,
+      deviceId: undefined,
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
         channelCount: 1,
       }
     });
@@ -43,12 +44,12 @@ export class AudioService {
     this.lastTick = performance.now();
   }
 
-  toggleMonitor(volume: number) {
+  toggleMonitor(volume: any) {
     this.monitorOn = !this.monitorOn;
     this.monitorGain.gain.value = this.monitorOn ? volume : 0;
   }
 
-  setMonitorVolume(vol: number) {
+  setMonitorVolume(vol: any) {
     if (this.monitorOn) {
       this.monitorGain.gain.value = vol;
     }

@@ -1,4 +1,4 @@
-import { Component, ViewChild, ElementRef, OnInit } from '@angular/core';
+import { Component, ViewChild, ElementRef, OnInit, ChangeDetectionStrategy, inject } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -9,9 +9,20 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatToolbarModule } from '@angular/material/toolbar';
-import { FormsModule } from '@angular/forms';
+import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { AudioService } from '../services/audio.service';
 import { RankingService, KaraokeConfig } from '../services/ranking.service';
+import { DialogPontuacao } from '../dialog-pontuacao/dialog-pontuacao';
+import {MatFormFieldModule} from '@angular/material/form-field';
+import {
+  MAT_DIALOG_DATA,
+  MatDialog,
+  MatDialogActions,
+  MatDialogClose,
+  MatDialogContent,
+  MatDialogRef,
+  MatDialogTitle,
+} from '@angular/material/dialog';
 
 @Component({
   selector: 'app-karaoke',
@@ -27,7 +38,14 @@ import { RankingService, KaraokeConfig } from '../services/ranking.service';
     MatProgressBarModule, 
     MatToolbarModule,
     FormsModule, 
+    MatFormFieldModule, 
+    MatInputModule, 
+    FormsModule, 
+    MatButtonModule,
+    ReactiveFormsModule,
+    MatSliderModule
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './karaoke.html',
   styleUrl: './karaoke.scss',
 })
@@ -35,11 +53,36 @@ import { RankingService, KaraokeConfig } from '../services/ranking.service';
 export class Karaoke implements OnInit  {
 
   ngOnInit(): void {
-    this.cfg = this.rankingSvc.loadConfig();
-    this.ranking = this.rankingSvc.loadRanking();
-  }
- @ViewChild('player') player!: ElementRef<HTMLVideoElement>;
+     // 1. carrega do serviço
+  this.cfg = this.rankingSvc.loadConfig();
 
+  // 2. injeta no form
+  this.configForm.patchValue(this.cfg);
+
+  // 3. mantém cfg sincronizado
+  this.configForm.valueChanges.subscribe(value => {
+    this.cfg = value as KaraokeConfig;
+  });
+  
+    this.ranking = this.rankingSvc.loadRanking();
+
+    this.configForm.valueChanges.subscribe(val => {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('karaoke_config_v1', JSON.stringify(val));
+      }
+    });
+
+      if (typeof window !== 'undefined') {
+        const raw = localStorage.getItem('karaoke_config_v1');
+        if (raw) {
+          this.configForm.patchValue(JSON.parse(raw));
+        }
+      }
+  }
+  
+ @ViewChild('player', { static: false }) player!: ElementRef<HTMLVideoElement>;
+
+  dialog = inject(MatDialog);
   videoUrl: string | null = null;
   currentSong = '';
   savedThisRun = false;
@@ -48,7 +91,7 @@ export class Karaoke implements OnInit  {
   micLevel = 0;
   score = 0;
 
-  monitorVolume = 0.6;
+monitorVolumeCtrl = new FormControl<number>(0.5, { nonNullable: true });
 
   videoState = '?';
   videoTime = 0;
@@ -61,6 +104,24 @@ export class Karaoke implements OnInit  {
     public rankingSvc: RankingService
   ) {}
 
+  configForm = new FormGroup({
+    silenceRms: new FormControl(0.015),
+    tooLoudRms: new FormControl(0.10),
+    clipPeak: new FormControl(0.98),
+    maxPtsPerSec: new FormControl(20),
+    clipPenaltyPerSec: new FormControl(12),
+  });
+
+  resetConfig() {
+    this.configForm.setValue({
+      silenceRms: 0.015,
+      tooLoudRms: 0.10,
+      clipPeak: 0.98,
+      maxPtsPerSec: 20,
+      clipPenaltyPerSec: 12,
+    });
+  }
+
   onVideoSelected(ev: Event) {
     const file = (ev.target as HTMLInputElement).files?.[0];
     if (!file) return;
@@ -71,48 +132,73 @@ export class Karaoke implements OnInit  {
     this.savedThisRun = false;
   }
 
-  async enableMic() {
+   async enableMic() {
     await this.audio.enableMic();
     this.micEnabled = true;
-    requestAnimationFrame(this.loop.bind(this));
+    this.loop();
   }
 
   toggleMonitor() {
-    this.audio.toggleMonitor(this.monitorVolume);
+    this.audio.toggleMonitor(this.monitorVolumeCtrl.value);
   }
 
   updateMonitorVolume() {
-    this.audio.setMonitorVolume(this.monitorVolume);
+    this.audio.setMonitorVolume(this.monitorVolumeCtrl.value);
   }
+
+  get monitorVolume() {
+  return this.monitorVolumeCtrl.value ?? 0;
+}
 
   onVideoEnded() {
     if (this.savedThisRun) return;
     this.savedThisRun = true;
     this.rankingSvc.addRanking(this.currentSong, this.score);
     this.ranking = this.rankingSvc.loadRanking();
+    
+    this.openDialog(this.score);
   }
 
-  loop() {
-    const player = this.player.nativeElement;
-    const { rms, peak, dt } = this.audio.readMicLevel();
+  openDialog(score: number): void {
+    const dialogRef = this.dialog.open(DialogPontuacao, {
+      data: {score: score},
+    });
 
-    this.micLevel = rms;
+    dialogRef.afterClosed().subscribe(() => {
+      console.log('The dialog was closed');
+    });
+  }
+   
+loop() {
+  const player = this.player.nativeElement;
 
-    if (!player.paused && !player.ended) {
-      if (rms >= this.cfg.silenceRms) {
-        const clipped = peak >= this.cfg.clipPeak;
-        const norm =
-          (Math.min(rms, this.cfg.tooLoudRms) - this.cfg.silenceRms) /
-          (this.cfg.tooLoudRms - this.cfg.silenceRms);
-
-        let pts = Math.max(0, norm) * this.cfg.maxPtsPerSec * dt;
-        if (clipped) pts -= this.cfg.clipPenaltyPerSec * dt;
-
-        this.score = Math.max(0, Math.round(this.score + pts));
-      }
-    }
-
+  const level = this.audio.readMicLevel();
+  if (!level) {
     requestAnimationFrame(this.loop.bind(this));
+    return;
+  }
+
+  const { rms, peak, dt } = level;
+
+  // atualiza SEMPRE
+  this.micLevel = rms;
+
+  // só ignora pontuação, não o loop
+  if (!player.paused && !player.ended) {
+    if (rms >= this.cfg.silenceRms!) {
+      const clipped = peak >= this.cfg.clipPeak!;
+      const norm =
+        (Math.min(rms, this.cfg.tooLoudRms!) - this.cfg.silenceRms!) /
+        (this.cfg.tooLoudRms! - this.cfg.silenceRms!);
+
+      let pts = Math.max(0, norm) * this.cfg.maxPtsPerSec! * dt;
+      if (clipped) pts -= this.cfg.clipPenaltyPerSec! * dt;
+
+      this.score = Math.max(0, Math.round(this.score + pts));
+    }
+  }
+
+  requestAnimationFrame(this.loop.bind(this));
   }
 
   resetScore() {
