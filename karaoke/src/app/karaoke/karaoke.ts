@@ -1,4 +1,4 @@
-import { Component, ViewChild, ElementRef, OnInit, ChangeDetectionStrategy, inject } from '@angular/core';
+import { Component, ViewChild, ElementRef, OnInit, ChangeDetectionStrategy, inject, signal, ChangeDetectorRef, NgZone } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -23,6 +23,7 @@ import {
   MatDialogRef,
   MatDialogTitle,
 } from '@angular/material/dialog';
+import {MatExpansionModule} from '@angular/material/expansion';
 
 @Component({
   selector: 'app-karaoke',
@@ -43,7 +44,8 @@ import {
     FormsModule, 
     MatButtonModule,
     ReactiveFormsModule,
-    MatSliderModule
+    MatSliderModule,
+    MatExpansionModule
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './karaoke.html',
@@ -82,10 +84,15 @@ export class Karaoke implements OnInit  {
   
  @ViewChild('player', { static: false }) player!: ElementRef<HTMLVideoElement>;
 
+ 
+  readonly panelOpenState = signal(false);
+
   dialog = inject(MatDialog);
   videoUrl: string | null = null;
   currentSong = '';
   savedThisRun = false;
+  private cdr: ChangeDetectorRef = inject(ChangeDetectorRef);
+  private zone = inject(NgZone);
 
   micEnabled = false;
   micLevel = 0;
@@ -106,7 +113,7 @@ monitorVolumeCtrl = new FormControl<number>(0.5, { nonNullable: true });
 
   configForm = new FormGroup({
     silenceRms: new FormControl(0.015),
-    tooLoudRms: new FormControl(0.10),
+    tooLoudRms: new FormControl(0.30),
     clipPeak: new FormControl(0.98),
     maxPtsPerSec: new FormControl(20),
     clipPenaltyPerSec: new FormControl(12),
@@ -115,7 +122,7 @@ monitorVolumeCtrl = new FormControl<number>(0.5, { nonNullable: true });
   resetConfig() {
     this.configForm.setValue({
       silenceRms: 0.015,
-      tooLoudRms: 0.10,
+      tooLoudRms: 0.30,
       clipPeak: 0.98,
       maxPtsPerSec: 20,
       clipPenaltyPerSec: 12,
@@ -130,6 +137,8 @@ monitorVolumeCtrl = new FormControl<number>(0.5, { nonNullable: true });
     this.currentSong = file.name;
     this.score = 0;
     this.savedThisRun = false;
+
+    this.enableMic()
   }
 
    async enableMic() {
@@ -168,11 +177,15 @@ monitorVolumeCtrl = new FormControl<number>(0.5, { nonNullable: true });
       console.log('The dialog was closed');
     });
   }
-   
-loop() {
-  const player = this.player.nativeElement;
+  
+get micLevelPercent(): number {
+  return Math.min(this.micLevel * 300, 100);
+}
 
+loop() {
+ const player = this.player.nativeElement;
   const level = this.audio.readMicLevel();
+
   if (!level) {
     requestAnimationFrame(this.loop.bind(this));
     return;
@@ -180,10 +193,12 @@ loop() {
 
   const { rms, peak, dt } = level;
 
-  // atualiza SEMPRE
-  this.micLevel = rms;
+  // 🔥 ATUALIZA VISUAL DENTRO DA ZONE
+  this.zone.run(() => {
+    this.micLevel = rms;
+console.log('this.micLevel:', this.micLevel);
+  });
 
-  // só ignora pontuação, não o loop
   if (!player.paused && !player.ended) {
     if (rms >= this.cfg.silenceRms!) {
       const clipped = peak >= this.cfg.clipPeak!;
