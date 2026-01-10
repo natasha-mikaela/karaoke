@@ -1,10 +1,10 @@
 import { Component, ViewChild, ElementRef, OnInit, ChangeDetectionStrategy, inject, signal, ChangeDetectorRef, NgZone } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
+import { CommonModule, DecimalPipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatSliderModule } from '@angular/material/slider';
 import { MatInputModule } from '@angular/material/input';
-import { MatTableModule } from '@angular/material/table';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
@@ -24,6 +24,8 @@ import {
   MatDialogTitle,
 } from '@angular/material/dialog';
 import {MatExpansionModule} from '@angular/material/expansion';
+import {MatSort, Sort, MatSortModule} from '@angular/material/sort';
+import {LiveAnnouncer} from '@angular/cdk/a11y';
 
 @Component({
   selector: 'app-karaoke',
@@ -45,7 +47,10 @@ import {MatExpansionModule} from '@angular/material/expansion';
     MatButtonModule,
     ReactiveFormsModule,
     MatSliderModule,
-    MatExpansionModule
+    MatExpansionModule,
+    CommonModule,
+    MatTableModule, 
+    MatSortModule
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './karaoke.html',
@@ -80,10 +85,39 @@ export class Karaoke implements OnInit  {
           this.configForm.patchValue(JSON.parse(raw));
         }
       }
+
+       this.ranking = this.rankingSvc.loadRanking();
+  this.dataSource.data = this.ranking;
   }
   
  @ViewChild('player', { static: false }) player!: ElementRef<HTMLVideoElement>;
+  ranking: any[] = [];
+  
+  private _liveAnnouncer = inject(LiveAnnouncer);
 
+  displayedColumns: string[] = ['position', 'name', 'weight', 'symbol'];
+
+dataSource = new MatTableDataSource<any>();
+
+@ViewChild(MatSort) sort!: MatSort;
+
+
+  ngAfterViewInit() {
+  this.dataSource.sort = this.sort;
+  }
+
+    /** Announce the change in sort state for assistive technology. */
+  announceSortChange(sortState: Sort) {
+    // This example uses English messages. If your application supports
+    // multiple language, you would internationalize these strings.
+    // Furthermore, you can customize the message to add additional
+    // details about the values being sorted.
+    if (sortState.direction) {
+      this._liveAnnouncer.announce(`Sorted ${sortState.direction}ending`);
+    } else {
+      this._liveAnnouncer.announce('Sorting cleared');
+    }
+  }
  
   readonly panelOpenState = signal(false);
 
@@ -103,7 +137,6 @@ monitorVolumeCtrl = new FormControl<number>(0.5, { nonNullable: true });
   videoState = '?';
   videoTime = 0;
 
-  ranking: any[] = [];
   cfg!: KaraokeConfig;
 
   constructor(
@@ -139,6 +172,7 @@ monitorVolumeCtrl = new FormControl<number>(0.5, { nonNullable: true });
     this.savedThisRun = false;
 
     this.enableMic()
+
   }
 
    async enableMic() {
@@ -183,6 +217,7 @@ get micLevelPercent(): number {
 }
 
 loop() {
+  
  const player = this.player.nativeElement;
   const level = this.audio.readMicLevel();
 

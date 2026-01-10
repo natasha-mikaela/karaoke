@@ -1,17 +1,20 @@
 <div class="header">
-  <h1>Karaokê do Deivão</h1>
+  <h1>Karaokê Patos vs Gatos</h1>
 </div>
 
 <div class="container">
   <mat-accordion multi>
     <!-- VÍDEO -->
-    <mat-expansion-panel hideToggle >
+    <mat-expansion-panel [expanded]="true">
       <mat-expansion-panel-header>
-        <mat-panel-title>Carregar vídeo</mat-panel-title>
+        <mat-panel-title>Vídeo</mat-panel-title>
         <!-- <mat-panel-description> This is a summary of the content </mat-panel-description> -->
       </mat-expansion-panel-header>
-      
+     
+      <button type="button" mat-raised-button (click)="fileInput.click()">Carregar vídeo</button>
       <input
+        #fileInput
+        hidden 
         type="file"
         accept="video/*,.mp4"
         (change)="onVideoSelected($event)"
@@ -45,21 +48,29 @@
         </button>
       </div>
       <p><b>Nível:</b> {{ micLevel | number:'1.3-3' }}</p>
-      <mat-progress-bar
- mode="determinate"
+     <mat-progress-bar
+  mode="determinate"
   [value]="micLevelPercent"
-      ></mat-progress-bar>
+  [color]="micLevel < cfg.silenceRms ? 'warn' : 'primary'"
+></mat-progress-bar>
+
+<small>
+  {{ micLevel < cfg.silenceRms ? 'Muito baixo' : 'Captando som 🎶' }}
+</small>
+
+  <small>
+        Volume retorno: {{ monitorVolume | number:'1.2-2' }}
+      </small> 
+
     <mat-slider min="0" max="1" step="0.01">
         <input matSliderThumb [formControl]="monitorVolumeCtrl" />
     </mat-slider>
 
-      <small>
-        Volume retorno: {{ monitorVolume | number:'1.2-2' }}
-      </small>
+
 
     </mat-expansion-panel> -->
     <!-- SCORE -->
-    <mat-expansion-panel hideToggle>
+    <mat-expansion-panel>
       <mat-expansion-panel-header>
         <mat-panel-title>Pontuação</mat-panel-title>
         <!-- <mat-panel-description> This is a summary of the content </mat-panel-description> -->
@@ -70,13 +81,13 @@
         Zerar score
       </button>
 
-      <p class="muted">
+      <!-- <p class="muted">
         Vídeo: {{ videoState }} |
         Tempo: {{ videoTime | number:'1.1-1' }}
-      </p>
+      </p> -->
     </mat-expansion-panel>
     <!-- RANKING -->
-    <mat-expansion-panel hideToggle>
+    <mat-expansion-panel>
       <mat-expansion-panel-header>
         <mat-panel-title>Ranking</mat-panel-title>
         <!-- <mat-panel-description> This is a summary of the content </mat-panel-description> -->
@@ -85,7 +96,12 @@
         Limpar ranking
       </button>
 
-      <table mat-table [dataSource]="ranking" class="mat-elevation-z2">
+      <table 
+      mat-table 
+      [dataSource]="dataSource" 
+      class="mat-elevation-z2"
+      matSort
+      >
 
         <ng-container matColumnDef="pos">
           <th mat-header-cell *matHeaderCellDef>#</th>
@@ -93,17 +109,24 @@
         </ng-container>
 
         <ng-container matColumnDef="music">
-          <th mat-header-cell *matHeaderCellDef>Música</th>
+          <th mat-header-cell *matHeaderCellDef
+          mat-sort-header sortActionDescription="Sort by number">Música</th>
           <td mat-cell *matCellDef="let row">{{ row.music }}</td>
         </ng-container>
 
         <ng-container matColumnDef="score">
-          <th mat-header-cell *matHeaderCellDef>Score</th>
-          <td mat-cell *matCellDef="let row">{{ row.score }}</td>
+          <th mat-header-cell *matHeaderCellDef 
+          mat-sort-header sortActionDescription="Sort by number">Pontos</th>
+          <!-- <td mat-cell *matCellDef="let row">{{ row.score }}</td> -->
+          <td mat-cell  *matCellDef="let row">
+            <span *ngIf="row.score >= 400">{{ row.score }} 🐱</span>
+            <span *ngIf="row.score < 150">{{ row.score }} 🦆</span>
+          </td>
         </ng-container>
 
         <ng-container matColumnDef="date">
-          <th mat-header-cell *matHeaderCellDef>Data</th>
+          <th mat-header-cell *matHeaderCellDef
+          mat-sort-header sortActionDescription="Sort by number">Data</th>
           <td mat-cell *matCellDef="let row">{{ row.date }}</td>
         </ng-container>
 
@@ -113,8 +136,7 @@
       </table>
     <!-- CONFIGURAÇÃO -->
     </mat-expansion-panel>
-    <!-- Configuração do Microfone -->
-    <mat-expansion-panel hideToggle>
+    <mat-expansion-panel>
       <mat-expansion-panel-header>
         <mat-panel-title>Configuração do Microfone</mat-panel-title>
         <!-- <mat-panel-description> This is a summary of the content </mat-panel-description> -->
@@ -122,7 +144,7 @@
       <div class="grid">
 
         <div>
-          <label>Silence RMS</label>
+          <label>Sensibilidade do microfone</label>
           <form [formGroup]="configForm">
               <mat-slider
               min="0.001"
@@ -135,14 +157,13 @@
             </form>
 
               <span>   
-                Silence RMS:
                 {{ configForm.get('silenceRms')?.value | number:'1.3-3' }}
               </span>
         </div>
 
         
         <div>
-          <label>Too Loud RMS</label>
+          <label>Volume máximo aceitável</label>
           <form [formGroup]="configForm">
               <mat-slider
               min="0.02"
@@ -159,7 +180,7 @@
         </div>
 
         <div>
-          <label>Clip Peak</label>
+          <label>Gritar demais</label>
           <form [formGroup]="configForm">
               <mat-slider
               min="0.8"
@@ -176,7 +197,7 @@
         </div>
 
         <div>
-          <label>Pontos / segundo</label>
+          <label>Velocidade de pontuação</label>
           
           <form [formGroup]="configForm">
           <mat-slider

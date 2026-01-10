@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { StorageService } from './storage.service';
+import { formatDate } from '@angular/common';
 
 const STORAGE_CONFIG = 'karaoke_config_v1';
 const STORAGE_RANKING = 'karaoke_ranking_v1';
@@ -55,7 +56,7 @@ export class RankingService {
 
   addRanking(music: string, score: number) {
     const arr = this.loadRanking();
-    arr.push({ music, score, date: new Date().toLocaleString() });
+    arr.push({ music, score, date: formatDate(Date.now(),'HH:mm dd/MM','en-US') });
     this.saveRanking(arr);
   }
 

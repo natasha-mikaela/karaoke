@@ -1,0 +1,16 @@
+.dialog{   
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 15px;
+
+    img{
+        max-width: 80%;
+    }
+
+    h1{
+        margin-bottom: 10px;
+        text-align: center;
+        color: #F5C26B;
+    }
+}
