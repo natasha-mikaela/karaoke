@@ -42,8 +42,23 @@ A ideia não é julgar talento musical — é gerar risadas.
 - **Angular Material** (UI)
 - **TypeScript**
 - **Vite / Angular SSR (dev)**
+- **Electron** — empacotamento e execução desktop
+- **Electron Builder** — geração do instalador/executável
 
 ---
+
+## 🖥️ Aplicação Desktop com Electron
+
+Este projeto utiliza Electron para empacotar a aplicação Angular como um aplicativo desktop multiplataforma.
+
+O Electron permite que a aplicação seja executada como um programa nativo no sistema operacional, utilizando tecnologias web (HTML, CSS e TypeScript), sem depender de um navegador.
+
+### 🔧 Principais usos do Electron neste projeto:
+
+- Geração de executável (.exe) para Windows
+- Execução local da aplicação Angular em ambiente desktop
+- Acesso a recursos nativos do sistema operacional
+- Distribuição do projeto como aplicação independente
 
 ## 🎤 Como funciona a pontuação
 
@@ -94,12 +109,11 @@ Abra em: `http://localhost:4200`
 ```
 src/
  ├── app/
- │   ├── karaoke/        # Componente principal
- │   ├── services/
- │   │   ├── audio.service.ts
- │   │   └── ranking.service.ts
- │   └── dialog-pontuacao/
- └── assets/
+    ├── karaoke/        # Componente principal
+    ├── services/
+    │   ├── audio.service.ts
+    │   └── ranking.service.ts
+    └── dialog-pontuacao/
 ```
 
 ---
