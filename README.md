@@ -40,8 +40,6 @@ A ideia não é julgar talento musical — é gerar risadas.
 
 - **Angular** (Standalone Components)
 - **Angular Material** (UI)
-- **Web Audio API** (captura e análise de áudio)
-- **RxJS**
 - **TypeScript**
 - **Vite / Angular SSR (dev)**
 

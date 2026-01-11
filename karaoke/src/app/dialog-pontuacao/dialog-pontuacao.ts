@@ -2,15 +2,15 @@ import { Component, inject } from '@angular/core';
 import {
   MatDialog,
   MAT_DIALOG_DATA,
-  MatDialogTitle,
-  MatDialogContent,
+  MatDialogActions,
+  MatDialogClose
 } from '@angular/material/dialog';
-import {MatButtonModule} from '@angular/material/button';
+import { MatButtonModule } from '@angular/material/button';
 import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-dialog-pontuacao',
-  imports: [ MatButtonModule, CommonModule],
+  imports: [MatButtonModule, CommonModule, MatDialogActions, MatDialogClose, MatButtonModule],
   templateUrl: './dialog-pontuacao.html',
   styleUrl: './dialog-pontuacao.scss',
 })
@@ -25,9 +25,9 @@ export class DialogPontuacao {
   }
 
   get resultPhrase(): string {
-  if (this.data.score >= 800) return 'Parabéns! Você é um gato supremo!';
-  if (this.data.score >= 400) return 'Um gato respeitável, miou afinado.';
-  if (this.data.score >= 150) return 'Quase virou pato… mas escapou.';
-  return 'Quá. Apenas quá.';
-}
+    if (this.data.score >= 800) return 'Parabéns! Você é um gato supremo!';
+    if (this.data.score >= 400) return 'Um gato respeitável, miou afinado.';
+    if (this.data.score >= 150) return 'Quase virou pato… mas escapou.';
+    return 'Quá. Apenas quá.';
+  }
 }

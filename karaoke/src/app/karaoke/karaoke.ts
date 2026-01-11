@@ -13,64 +13,61 @@ import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angul
 import { AudioService } from '../services/audio.service';
 import { RankingService, KaraokeConfig } from '../services/ranking.service';
 import { DialogPontuacao } from '../dialog-pontuacao/dialog-pontuacao';
-import {MatFormFieldModule} from '@angular/material/form-field';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import {
   MAT_DIALOG_DATA,
   MatDialog,
-  MatDialogActions,
-  MatDialogClose,
-  MatDialogContent,
-  MatDialogRef,
-  MatDialogTitle,
 } from '@angular/material/dialog';
-import {MatExpansionModule} from '@angular/material/expansion';
-import {MatSort, Sort, MatSortModule} from '@angular/material/sort';
-import {LiveAnnouncer} from '@angular/cdk/a11y';
+import { MatExpansionModule } from '@angular/material/expansion';
+import { MatSort, Sort, MatSortModule } from '@angular/material/sort';
+import { LiveAnnouncer } from '@angular/cdk/a11y';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-karaoke',
   imports: [
-    DecimalPipe, 
-    MatButtonModule, 
-    MatCardModule, 
-    MatSliderModule, 
-    MatInputModule, 
-    MatTableModule, 
-    MatIconModule, 
-    MatDividerModule, 
-    MatProgressBarModule, 
+    DecimalPipe,
+    MatButtonModule,
+    MatCardModule,
+    MatSliderModule,
+    MatInputModule,
+    MatTableModule,
+    MatIconModule,
+    MatDividerModule,
+    MatProgressBarModule,
     MatToolbarModule,
-    FormsModule, 
-    MatFormFieldModule, 
-    MatInputModule, 
-    FormsModule, 
+    FormsModule,
+    MatFormFieldModule,
+    MatInputModule,
+    FormsModule,
     MatButtonModule,
     ReactiveFormsModule,
     MatSliderModule,
     MatExpansionModule,
     CommonModule,
-    MatTableModule, 
-    MatSortModule
+    MatTableModule,
+    MatSortModule,
+    MatSnackBarModule
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './karaoke.html',
   styleUrl: './karaoke.scss',
 })
 
-export class Karaoke implements OnInit  {
+export class Karaoke implements OnInit {
 
   ngOnInit(): void {
-     // 1. carrega do serviço
-  this.cfg = this.rankingSvc.loadConfig();
+    // 1. carrega do serviço
+    this.cfg = this.rankingSvc.loadConfig();
 
-  // 2. injeta no form
-  this.configForm.patchValue(this.cfg);
+    // 2. injeta no form
+    this.configForm.patchValue(this.cfg);
 
-  // 3. mantém cfg sincronizado
-  this.configForm.valueChanges.subscribe(value => {
-    this.cfg = value as KaraokeConfig;
-  });
-  
+    // 3. mantém cfg sincronizado
+    this.configForm.valueChanges.subscribe(value => {
+      this.cfg = value as KaraokeConfig;
+    });
+
     this.ranking = this.rankingSvc.loadRanking();
 
     this.configForm.valueChanges.subscribe(val => {
@@ -79,65 +76,46 @@ export class Karaoke implements OnInit  {
       }
     });
 
-      if (typeof window !== 'undefined') {
-        const raw = localStorage.getItem('karaoke_config_v1');
-        if (raw) {
-          this.configForm.patchValue(JSON.parse(raw));
-        }
+    if (typeof window !== 'undefined') {
+      const raw = localStorage.getItem('karaoke_config_v1');
+      if (raw) {
+        this.configForm.patchValue(JSON.parse(raw));
       }
-
-       this.ranking = this.rankingSvc.loadRanking();
-  this.dataSource.data = this.ranking;
-  }
-  
- @ViewChild('player', { static: false }) player!: ElementRef<HTMLVideoElement>;
-  ranking: any[] = [];
-  
-  private _liveAnnouncer = inject(LiveAnnouncer);
-
-  displayedColumns: string[] = ['position', 'name', 'weight', 'symbol'];
-
-dataSource = new MatTableDataSource<any>();
-
-@ViewChild(MatSort) sort!: MatSort;
-
-
-  ngAfterViewInit() {
-  this.dataSource.sort = this.sort;
-  }
-
-    /** Announce the change in sort state for assistive technology. */
-  announceSortChange(sortState: Sort) {
-    // This example uses English messages. If your application supports
-    // multiple language, you would internationalize these strings.
-    // Furthermore, you can customize the message to add additional
-    // details about the values being sorted.
-    if (sortState.direction) {
-      this._liveAnnouncer.announce(`Sorted ${sortState.direction}ending`);
-    } else {
-      this._liveAnnouncer.announce('Sorting cleared');
     }
+
+    this.ranking = this.rankingSvc.loadRanking();
+    this.dataSource.data = this.ranking;
   }
- 
+
+  private _snackBar = inject(MatSnackBar);
+  private zone = inject(NgZone);
   readonly panelOpenState = signal(false);
 
+  ranking: any[] = [];
+  displayedColumns: string[] = ['position', 'name', 'weight', 'symbol'];
+  dataSource = new MatTableDataSource<any>();
   dialog = inject(MatDialog);
   videoUrl: string | null = null;
   currentSong = '';
   savedThisRun = false;
-  private cdr: ChangeDetectorRef = inject(ChangeDetectorRef);
-  private zone = inject(NgZone);
-
   micEnabled = false;
   micLevel = 0;
   score = 0;
-
-monitorVolumeCtrl = new FormControl<number>(0.5, { nonNullable: true });
-
+  monitorVolumeCtrl = new FormControl<number>(0.5, { nonNullable: true });
   videoState = '?';
   videoTime = 0;
-
   cfg!: KaraokeConfig;
+
+  @ViewChild('player', { static: false }) player!: ElementRef<HTMLVideoElement>;
+  @ViewChild(MatSort) sort!: MatSort;
+
+  ngAfterViewInit() {
+    this.dataSource.sort = this.sort;
+  }
+
+  openSnackBar(message: string, action: string) {
+    this._snackBar.open(message, action);
+  }
 
   constructor(
     private audio: AudioService,
@@ -172,13 +150,20 @@ monitorVolumeCtrl = new FormControl<number>(0.5, { nonNullable: true });
     this.savedThisRun = false;
 
     this.enableMic()
-
   }
 
-   async enableMic() {
-    await this.audio.enableMic();
-    this.micEnabled = true;
-    this.loop();
+  async enableMic() {
+    try {
+      await this.audio.enableMic();
+      this.micEnabled = true;
+
+      this.openSnackBar('🎤 Microfone ativado!', 'OK')
+      this.loop();
+
+    } catch (err) {
+      console.error(err);
+      this.openSnackBar('❌ Não foi possível acessar o microfone', 'Fechar')
+    }
   }
 
   toggleMonitor() {
@@ -190,73 +175,74 @@ monitorVolumeCtrl = new FormControl<number>(0.5, { nonNullable: true });
   }
 
   get monitorVolume() {
-  return this.monitorVolumeCtrl.value ?? 0;
-}
+    return this.monitorVolumeCtrl.value ?? 0;
+  }
 
   onVideoEnded() {
     if (this.savedThisRun) return;
     this.savedThisRun = true;
     this.rankingSvc.addRanking(this.currentSong, this.score);
     this.ranking = this.rankingSvc.loadRanking();
-    
+
+    this.dataSource.data = [...this.ranking];
     this.openDialog(this.score);
   }
 
   openDialog(score: number): void {
     const dialogRef = this.dialog.open(DialogPontuacao, {
-      data: {score: score},
+      data: { score: score },
     });
 
     dialogRef.afterClosed().subscribe(() => {
       console.log('The dialog was closed');
     });
   }
-  
-get micLevelPercent(): number {
-  return Math.min(this.micLevel * 300, 100);
-}
 
-loop() {
-  
- const player = this.player.nativeElement;
-  const level = this.audio.readMicLevel();
-
-  if (!level) {
-    requestAnimationFrame(this.loop.bind(this));
-    return;
+  get micLevelPercent(): number {
+    return Math.min(this.micLevel * 300, 100);
   }
 
-  const { rms, peak, dt } = level;
+  loop() {
+    const player = this.player.nativeElement;
+    const level = this.audio.readMicLevel();
 
-  // 🔥 ATUALIZA VISUAL DENTRO DA ZONE
-  this.zone.run(() => {
-    this.micLevel = rms;
-console.log('this.micLevel:', this.micLevel);
-  });
-
-  if (!player.paused && !player.ended) {
-    if (rms >= this.cfg.silenceRms!) {
-      const clipped = peak >= this.cfg.clipPeak!;
-      const norm =
-        (Math.min(rms, this.cfg.tooLoudRms!) - this.cfg.silenceRms!) /
-        (this.cfg.tooLoudRms! - this.cfg.silenceRms!);
-
-      let pts = Math.max(0, norm) * this.cfg.maxPtsPerSec! * dt;
-      if (clipped) pts -= this.cfg.clipPenaltyPerSec! * dt;
-
-      this.score = Math.max(0, Math.round(this.score + pts));
+    if (!level) {
+      requestAnimationFrame(this.loop.bind(this));
+      return;
     }
-  }
 
-  requestAnimationFrame(this.loop.bind(this));
+    const { rms, peak, dt } = level;
+
+    this.zone.run(() => {
+      this.micLevel = rms;
+      // console.log(this.micLevel);
+    });
+
+    if (!player.paused && !player.ended) {
+      if (rms >= this.cfg.silenceRms!) {
+        const clipped = peak >= this.cfg.clipPeak!;
+        const norm =
+          (Math.min(rms, this.cfg.tooLoudRms!) - this.cfg.silenceRms!) /
+          (this.cfg.tooLoudRms! - this.cfg.silenceRms!);
+
+        let pts = Math.max(0, norm) * this.cfg.maxPtsPerSec! * dt;
+        if (clipped) pts -= this.cfg.clipPenaltyPerSec! * dt;
+
+        this.score = Math.max(0, Math.round(this.score + pts));
+      }
+    }
+
+    requestAnimationFrame(this.loop.bind(this));
   }
 
   resetScore() {
     this.score = 0;
+    this.openDialog(5);
   }
 
   clearRanking() {
     this.rankingSvc.clearRanking();
     this.ranking = [];
+    this.dataSource.data = [];
   }
 }

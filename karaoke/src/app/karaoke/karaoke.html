@@ -10,70 +10,17 @@
         <mat-panel-title>Vídeo</mat-panel-title>
         <!-- <mat-panel-description> This is a summary of the content </mat-panel-description> -->
       </mat-expansion-panel-header>
-     
+
       <button type="button" mat-raised-button (click)="fileInput.click()">Carregar vídeo</button>
-      <input
-        #fileInput
-        hidden 
-        type="file"
-        accept="video/*,.mp4"
-        (change)="onVideoSelected($event)"
-      />
-
-      <video
-        #player
-        [src]="videoUrl"
-        controls
-        style="width:100%; margin-top:12px; background:black"
-        (ended)="onVideoEnded()"
-      ></video>
+      <input #fileInput hidden type="file" accept="video/*,.mp4" (change)="onVideoSelected($event)" />
+      <h3>{{ currentSong }}</h3>
+      <video #player [src]="videoUrl" controls style="width:100%; margin-top:12px; background:black"
+        (ended)="onVideoEnded()"></video>
     </mat-expansion-panel>
-    <!-- MICROFONE -->
-    <!-- <mat-expansion-panel hideToggle>
-      <mat-expansion-panel-header>
-        <mat-panel-title>Microfone</mat-panel-title>
-      </mat-expansion-panel-header>
-
-      <div class="row">
-        <button mat-raised-button color="primary" (click)="enableMic()">
-          <mat-icon>mic</mat-icon>
-          Ativar microfone
-        </button>
-        <button
-          mat-raised-button
-          color="accent"
-          (click)="toggleMonitor()"
-        >
-          <mat-icon>volume_up</mat-icon>
-        </button>
-      </div>
-      <p><b>Nível:</b> {{ micLevel | number:'1.3-3' }}</p>
-     <mat-progress-bar
-  mode="determinate"
-  [value]="micLevelPercent"
-  [color]="micLevel < cfg.silenceRms ? 'warn' : 'primary'"
-></mat-progress-bar>
-
-<small>
-  {{ micLevel < cfg.silenceRms ? 'Muito baixo' : 'Captando som 🎶' }}
-</small>
-
-  <small>
-        Volume retorno: {{ monitorVolume | number:'1.2-2' }}
-      </small> 
-
-    <mat-slider min="0" max="1" step="0.01">
-        <input matSliderThumb [formControl]="monitorVolumeCtrl" />
-    </mat-slider>
-
-
-
-    </mat-expansion-panel> -->
-    <!-- SCORE -->
+    <!-- PONTOS -->
     <mat-expansion-panel>
       <mat-expansion-panel-header>
         <mat-panel-title>Pontuação</mat-panel-title>
-        <!-- <mat-panel-description> This is a summary of the content </mat-panel-description> -->
       </mat-expansion-panel-header>
       <h2>{{ score }}</h2>
 
@@ -81,159 +28,120 @@
         Zerar score
       </button>
 
-      <!-- <p class="muted">
-        Vídeo: {{ videoState }} |
-        Tempo: {{ videoTime | number:'1.1-1' }}
-      </p> -->
     </mat-expansion-panel>
     <!-- RANKING -->
     <mat-expansion-panel>
       <mat-expansion-panel-header>
         <mat-panel-title>Ranking</mat-panel-title>
-        <!-- <mat-panel-description> This is a summary of the content </mat-panel-description> -->
       </mat-expansion-panel-header>
-          <button mat-stroked-button color="warn" (click)="clearRanking()">
+      <button mat-stroked-button color="warn" (click)="clearRanking()">
         Limpar ranking
       </button>
 
-      <table 
-      mat-table 
-      [dataSource]="dataSource" 
-      class="mat-elevation-z2"
-      matSort
-      >
-
+      <table mat-table [dataSource]="dataSource" class="mat-elevation-z2" matSort>
         <ng-container matColumnDef="pos">
           <th mat-header-cell *matHeaderCellDef>#</th>
           <td mat-cell *matCellDef="let row; index as i">{{ i + 1 }}</td>
         </ng-container>
 
         <ng-container matColumnDef="music">
-          <th mat-header-cell *matHeaderCellDef
-          mat-sort-header sortActionDescription="Sort by number">Música</th>
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Música</th>
           <td mat-cell *matCellDef="let row">{{ row.music }}</td>
         </ng-container>
 
         <ng-container matColumnDef="score">
-          <th mat-header-cell *matHeaderCellDef 
-          mat-sort-header sortActionDescription="Sort by number">Pontos</th>
-          <!-- <td mat-cell *matCellDef="let row">{{ row.score }}</td> -->
-          <td mat-cell  *matCellDef="let row">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Pontos</th>
+          <td mat-cell *matCellDef="let row">
             <span *ngIf="row.score >= 400">{{ row.score }} 🐱</span>
             <span *ngIf="row.score < 150">{{ row.score }} 🦆</span>
           </td>
         </ng-container>
 
         <ng-container matColumnDef="date">
-          <th mat-header-cell *matHeaderCellDef
-          mat-sort-header sortActionDescription="Sort by number">Data</th>
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Data</th>
           <td mat-cell *matCellDef="let row">{{ row.date }}</td>
         </ng-container>
 
         <tr mat-header-row *matHeaderRowDef="['pos','music','score','date']"></tr>
         <tr mat-row *matRowDef="let row; columns: ['pos','music','score','date']"></tr>
-
       </table>
-    <!-- CONFIGURAÇÃO -->
     </mat-expansion-panel>
+    <!-- CONFIGURAÇÃO DO MICROFONE -->
     <mat-expansion-panel>
       <mat-expansion-panel-header>
         <mat-panel-title>Configuração do Microfone</mat-panel-title>
-        <!-- <mat-panel-description> This is a summary of the content </mat-panel-description> -->
       </mat-expansion-panel-header>
       <div class="grid">
 
         <div>
           <label>Sensibilidade do microfone</label>
           <form [formGroup]="configForm">
-              <mat-slider
-              min="0.001"
-              max="0.08"
-              step="0.001">
-                    <input
-                      matSliderThumb
-                      formControlName="silenceRms" />
-              </mat-slider>
-            </form>
+            <mat-slider min="0.001" max="0.08" step="0.001">
+              <input matSliderThumb formControlName="silenceRms" />
+            </mat-slider>
+          </form>
 
-              <span>   
-                {{ configForm.get('silenceRms')?.value | number:'1.3-3' }}
-              </span>
+          <span>
+            {{ configForm.get('silenceRms')?.value | number:'1.3-3' }}
+          </span>
         </div>
 
-        
+
         <div>
           <label>Volume máximo aceitável</label>
           <form [formGroup]="configForm">
-              <mat-slider
-              min="0.02"
-              max="0.4"
-              step="0.005">
-                <input
-                  matSliderThumb
-                  formControlName="tooLoudRms" />
-              </mat-slider>
-            </form>
-                <span>   
-                {{ configForm.get('tooLoudRms')?.value | number:'1.3-3' }}
-              </span>
+            <mat-slider min="0.02" max="0.4" step="0.005">
+              <input matSliderThumb formControlName="tooLoudRms" />
+            </mat-slider>
+          </form>
+          <span>
+            {{ configForm.get('tooLoudRms')?.value | number:'1.3-3' }}
+          </span>
         </div>
 
         <div>
           <label>Gritar demais</label>
           <form [formGroup]="configForm">
-              <mat-slider
-              min="0.8"
-              max="0.999"
-              step="0.001">                  
-              <input
-        matSliderThumb
-        formControlName="clipPeak" />
-              </mat-slider></form>
+            <mat-slider min="0.8" max="0.999" step="0.001">
+              <input matSliderThumb formControlName="clipPeak" />
+            </mat-slider>
+          </form>
 
-              <span>
-                {{ configForm.get('clipPeak')?.value | number:'1.3-3' }}
-              </span>
+          <span>
+            {{ configForm.get('clipPeak')?.value | number:'1.3-3' }}
+          </span>
         </div>
 
         <div>
           <label>Velocidade de pontuação</label>
-          
-          <form [formGroup]="configForm">
-          <mat-slider
-              min="1"
-              max="80"
-              step="1">
-                    <input
-        matSliderThumb
-        formControlName="maxPtsPerSec" />
-              </mat-slider></form>
 
-              <span>
-                {{ configForm.get('maxPtsPerSec')?.value | number:'1.3-3' }}</span>
+          <form [formGroup]="configForm">
+            <mat-slider min="1" max="80" step="1">
+              <input matSliderThumb formControlName="maxPtsPerSec" />
+            </mat-slider>
+          </form>
+
+          <span>
+            {{ configForm.get('maxPtsPerSec')?.value | number:'1.3-3' }}</span>
         </div>
 
         <div>
           <label>Penalidade / segundo</label>
 
           <form [formGroup]="configForm">
-              <mat-slider
-              min="0"
-              max="60"
-              step="1">
-                                  <input
-        matSliderThumb
-        formControlName="clipPenaltyPerSec" />
-              </mat-slider></form>
+            <mat-slider min="0" max="60" step="1">
+              <input matSliderThumb formControlName="clipPenaltyPerSec" />
+            </mat-slider>
+          </form>
 
-              <span>{{ configForm.get('clipPenaltyPerSec')?.value  | number:'1.3-3' }}</span>
+          <span>{{ configForm.get('clipPenaltyPerSec')?.value | number:'1.3-3' }}</span>
         </div>
 
       </div>
 
-  <button mat-raised-button (click)="resetConfig()">
-    Restaurar padrão
-  </button>
+      <button mat-raised-button (click)="resetConfig()">
+        Restaurar padrão
+      </button>
     </mat-expansion-panel>
   </mat-accordion>
 </div>
